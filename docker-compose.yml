@@ -1,0 +1,76 @@
+version: '3.5'
+
+networks:
+  app_network:
+    name: app_network
+    driver: bridge
+
+services:
+
+  php:
+    container_name: balancer_php
+    build:
+      context: ./docker/php
+    networks:
+      - app_network
+    volumes:
+      - ./:/var/www
+
+  nginx:
+    container_name: balancer_nginx_proxy
+    image: nginx:latest
+    networks:
+      - app_network
+    ports:
+      - 80:80
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/proxy.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      
+  node1:
+    container_name: balancer_node1
+    image: nginx:latest
+    networks:
+      - app_network
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/node.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - nginx
+      
+  node2:
+    container_name: balancer_node2
+    image: nginx:latest
+    networks:
+      - app_network
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/node.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - nginx
+      
+  node3:
+    container_name: balancer_node3
+    image: nginx:latest
+    networks:
+      - app_network
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/node.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - nginx
+
+  redis:
+    container_name: balancer_redis
+    image: redis:latest
+    networks:
+      - app_network
+    ports:
+      - 6389:6379
+    environment:
+      - REDIS_REPLICATION_MODE=master
